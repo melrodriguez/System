@@ -5,54 +5,83 @@
 { config, pkgs, ... }:
 
 {
-  imports = [ ./hardware-configuration.nix ];
-
-  # Allow unfree, which is required for some drivers.
-  nixpkgs.config.allowUnfree= true;
-
+  imports =
+    [ # Include the results of the hardware scan.
+      ./hardware-configuration.nix
+    ];
+  
+  # Allows unfree, which is required for some drivers.
+  nixpkgs.config.allowUnfree = true; 
+  
   boot = {
+    loader.efi.canTouchEfiVariables = true;
     loader.grub = {
-      enable = true;
+      devices = [ "nodev" ];
+      efiSupport = true;
       version = 2;
-      # Define on which hard drive you want to install Grub.
-      device = "/dev/sda"; # or "nodev" for efi only 
-      # Adds any additional entries to the GRUB boot menu.
-      extraEntries = '' 
-      menuentry "Windows 10" {
-        chainloader (hd0,1)+1
-    }'';
+      enable = true;
+      useOSProber = true;
   };
 };
 
-  networking.hostName = "nixos"; # Define your hostname.
+  # Use the systemd-boot EFI boot loader.
+  # boot.loader.systemd-boot.enable = true;
+  # boot.loader.efi.canTouchEfiVariables = true;
+  # boot.loader.grub.devices = [ "nodev" ];
+  # boot.loader.grub.efiSupport = true;
+  # boot.loader.grub.enable = true;
+  # boot.loader.grub.version = 2;
+  # boot.loader.grub.useOSProber = true;
 
+    networking.hostName = "LesserGremlin"; # Define your hostname.
+
+  # Set your time zone.
   time = {
     timeZone = "America/Chicago";
-    # Keeps hardware clock in local time to fix issues with Windows.
-    hardwareClockInLocalTime = true;   
+    # Keeps hardware clock in lcoal time to fix issues with Windows
+    hardwareClockInLocalTime = true;
 };
 
-  # Enable CUPS to print documents.
-  # services.printing.enable = true;
+  # The global useDHCP flag is deprecated, therefore explicitly set to false here.
+  # Per-interface useDHCP will be mandatory in the future, so this generated config
+  # replicates the default behaviour.
+  networking.useDHCP = false;
+  networking.interfaces.enp3s0.useDHCP = true;
 
-  # Enable sound.
-  sound.enable = true;
-  hardware.pulseaudio.enable = true;
+  # Configure network proxy if necessary
+  # networking.proxy.default = "http://user:password@proxy:port/";
+  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
 
-  # Enable the X11 windowing system.
+  # Select internationalisation properties.
+  # i18n.defaultLocale = "en_US.UTF-8";
+  # console = {
+  #   font = "Lat2-Terminus16";
+  #   keyMap = "us";
+  # };
+
+  
+
+  # Enable the X11 windowing stystem
   services = {
+    syncthing = {
+	enable = true;
+	user = "Melody";
+	dataDir = "/home/melody/Documents";
+	configDir = "/home/melody/Documents/.config/syncthing";
+    };
+
     xserver = {
       enable = true;
       layout = "us";
       xkbOptions = "caps:swapescape";
-
+      
       windowManager.i3.enable = true;
       desktopManager.xterm.enable = false;
 
       displayManager = {
         lightdm.enable = true;
         sessionCommands = ''
-        feh --bg-scale ~/Desktop/Images/Sun.png &
+        # feh --bg-scale ~/Desktop/Images/Sun.png &
         albert &
       '';
     };
@@ -62,98 +91,87 @@
     enable = true;
     fade = true;
     backend = "xrender";
-    inactiveOpacity = "0.75";
-    activeOpacity = "0.90";
-    opacityRules = [ "99:name *= 'Firefox'"];
-  };
-  
-  redshift = {
-    enable = true;
-    latitude = "33";
-    longitude = "-97";
-    temperature.day = 6500;
-    temperature.night = 2700;
+    inactiveOpacity = 0.75;
+    activeOpacity = 0.90;
+    opacityRules =  ["99:name *= 'Firefox'"];
   };
 };
 
+  # Enable CUPS to print documents.
+  # services.printing.enable = true;
+
+  # Enable sound.
+  sound.enable = true;
+  hardware.pulseaudio.enable = true;
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.extraUsers.melody = {
+  users.users.melody = {
     isNormalUser = true;
     home = "/home/melody";
     uid = 1000;
-    extraGroups = [ "wheel" "networkmanager" "docker"];
+    extraGroups = [ "wheel" "networkmanager"]; # Enable ‘sudo’ for the user.
     shell = pkgs.zsh;
-  };
-
-  virtualisation.docker.enable = true;
-
-  programs = {
-   zsh = {
-    enable = true;
-    enableCompletion = true;
-    syntaxHighlighting.enable = true;
-    autosuggestions.enable = true;
-    shellAliases = {
-      l = "exa";
-      ll = "exa -l";
-      la = "exa -lah";
-      vim = "nvim";
-      dropbox = "docker exec -it dropbox dropbox";
-      docker-start = ''
-      docker run -d --restart=always --name=dropbox \
-        -v /home/melody/Dropbox:/dbox/Dropbox \
-        -v /home/melody/.dropbox:/dbox/.dropbox \
-        -e DBOX_UID=1000 -e DBOX_GID=100 janeczku/dropbox'';
-      };
-      ohMyZsh = {
-        enable = true;
-        plugins = ["vi-mode" "web-search"];
-        theme = "agnoster";
-      };
-    };
   };
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
     environment.systemPackages = with pkgs; [
+      syncthing
+      wget 
+      vim
+      firefox
       alacritty
       emacs
       python3
-      docker
-      neovim
-      firefox
       keepassxc
       albert
       ripgrep
       git
-      wget
       aspell
       aspellDicts.en
       feh
       exa
       ranger
+      google-chrome
       fd
-   ];
-
-   fonts = {
-      enableFontDir = true;
-      enableGhostscriptFonts = true;
-      fonts = with pkgs; [
-        hack-font
-        source-code-pro
-        powerline-fonts
-        corefonts
-        dejavu_fonts
-        font-droid
-        freefont_ttf
-        google-fonts
-         ubuntu_font_family
     ];
-  };
 
-  # This value determines the NixOS release with which your system is to be
-  # compatible, in order to avoid breaking some software such as database
-  # servers. You should change this only after NixOS release notes say you
-  # should.
-  system.stateVersion = "18.03"; # Did you read the comment?
+  # Some programs need SUID wrappers, can be configured further or are
+  # started in user sessions.
+  # programs.mtr.enable = true;
+  # programs.gnupg.agent = {
+  #   enable = true;
+  #   enableSSHSupport = true;
+  # };
+  
+  fonts = {
+     enableFontDir = true;
+     enableGhostscriptFonts = true;
+     fonts = with pkgs; [
+       hack-font
+       source-code-pro
+       powerline-fonts
+       corefonts
+       dejavu_fonts
+       freefont_ttf
+       google-fonts
+       ubuntu_font_family
+   ];
+ };
+
+  # Open ports in the firewall.
+  # networking.firewall.allowedTCPPorts = [ ... ];
+  # networking.firewall.allowedUDPPorts = [ ... ];
+  # Or disable the firewall altogether.
+  # networking.firewall.enable = false;
+
+  # This value determines the NixOS release from which the default
+  # settings for stateful data, like file locations and database versions
+  # on your system were taken. It‘s perfectly fine and recommended to leave
+  # this value at the release version of the first install of this system.
+  # Before changing this value read the documentation for this option
+  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
+  system.stateVersion = "20.09"; # Did you read the comment?
+
 }
+
