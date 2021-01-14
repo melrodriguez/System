@@ -78,6 +78,14 @@
       windowManager.i3.enable = true;
       desktopManager.xterm.enable = false;
 
+      videoDrivers = [
+        "nvidiaBeta"
+      ];
+
+      screenSection = ''
+        Option "metamodes" "2560x1440_120 +0+0"
+      '';
+
       displayManager = {
         lightdm.enable = true;
         sessionCommands = ''
@@ -133,6 +141,9 @@
       exa
       ranger
       google-chrome
+      rustc
+      gcc
+      cargo
       fd
     ];
 
