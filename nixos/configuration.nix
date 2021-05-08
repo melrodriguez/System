@@ -33,7 +33,7 @@
   # boot.loader.grub.version = 2;
   # boot.loader.grub.useOSProber = true;
 
-    networking.hostName = "LesserGremlin"; # Define your hostname.
+  networking.hostName = "Eridanus"; # Define your hostname.
 
   # Set your time zone.
   time = {
@@ -59,6 +59,9 @@
   #   keyMap = "us";
   # };
 
+  # high-resolution display
+  hardware.video.hidpi.enable = true;
+  hardware.nvidia.package = true;
   
 
   # Enable the X11 windowing stystem
@@ -78,9 +81,9 @@
       windowManager.i3.enable = true;
       desktopManager.xterm.enable = false;
 
-      videoDrivers = [
-        "nvidiaBeta"
-      ];
+      # videoDrivers = [
+      #   "nvidiaBeta"
+      # ];
 
       screenSection = ''
         Option "metamodes" "2560x1440_120 +0+0"
@@ -124,11 +127,11 @@
   # List packages installed in system profile. To search, run:
   # $ nix search wget
     environment.systemPackages = with pkgs; [
+      alacritty
       syncthing
       wget 
       vim
       firefox
-      alacritty
       emacs
       python3
       keepassxc
@@ -144,6 +147,11 @@
       rustc
       gcc
       cargo
+      flameshot
+      discord-canary
+      logisim
+      pavucontrol
+      unzip
       fd
     ];
 
