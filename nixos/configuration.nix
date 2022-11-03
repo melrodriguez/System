@@ -9,151 +9,126 @@
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
     ];
-  
-  # Allows unfree, which is required for some drivers.
-  nixpkgs.config.allowUnfree = true; 
-  
-  boot = {
-    loader.efi.canTouchEfiVariables = true;
-    loader.grub = {
-      devices = [ "nodev" ];
-      efiSupport = true;
-      version = 2;
-      enable = true;
-      useOSProber = true;
-  };
-};
 
-  # Use the systemd-boot EFI boot loader.
-  # boot.loader.systemd-boot.enable = true;
-  # boot.loader.efi.canTouchEfiVariables = true;
-  # boot.loader.grub.devices = [ "nodev" ];
-  # boot.loader.grub.efiSupport = true;
-  # boot.loader.grub.enable = true;
-  # boot.loader.grub.version = 2;
-  # boot.loader.grub.useOSProber = true;
+  # Bootloader.
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.efi.efiSysMountPoint = "/boot/efi";
 
-  networking.hostName = "Eridanus"; # Define your hostname.
-
-  # Set your time zone.
-  time = {
-    timeZone = "America/Chicago";
-    # Keeps hardware clock in lcoal time to fix issues with Windows
-    hardwareClockInLocalTime = true;
-};
-
-  # The global useDHCP flag is deprecated, therefore explicitly set to false here.
-  # Per-interface useDHCP will be mandatory in the future, so this generated config
-  # replicates the default behaviour.
-  networking.useDHCP = false;
-  networking.interfaces.enp3s0.useDHCP = true;
+  networking.hostName = "nixos"; # Define your hostname.
+  networking.firewall.allowedTCPPorts = [80 443];
+  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
   # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
 
+  # Enable networking
+  networking.networkmanager.enable = true;
+
+  # Set your time zone.
+  time.timeZone = "America/Chicago";
+
   # Select internationalisation properties.
-  # i18n.defaultLocale = "en_US.UTF-8";
-  # console = {
-  #   font = "Lat2-Terminus16";
-  #   keyMap = "us";
-  # };
+  i18n.defaultLocale = "en_US.utf8";
 
-  # high-resolution display
-  hardware.video.hidpi.enable = true;
-  hardware.nvidia.package = true;
-  
-
-  # Enable the X11 windowing stystem
-  services = {
-    syncthing = {
-	enable = true;
-	user = "Melody";
-	dataDir = "/home/melody/Documents";
-	configDir = "/home/melody/Documents/.config/syncthing";
-    };
-
-    xserver = {
-      enable = true;
-      layout = "us";
-      xkbOptions = "caps:swapescape";
-      
-      windowManager.i3.enable = true;
-      desktopManager.xterm.enable = false;
-
-      # videoDrivers = [
-      #   "nvidiaBeta"
-      # ];
-
-      screenSection = ''
-        Option "metamodes" "2560x1440_120 +0+0"
-      '';
-
-      displayManager = {
-        lightdm.enable = true;
-        sessionCommands = ''
-        # feh --bg-scale ~/Desktop/Images/Sun.png &
-        albert &
-      '';
-    };
+  security.acme = {
+    acceptTerms = true;
+    defaults.email = "melody.annette.rodriguez@gmail.com";
   };
 
-  compton = {
-    enable = true;
-    fade = true;
-    backend = "xrender";
-    inactiveOpacity = 0.75;
-    activeOpacity = 0.90;
-    opacityRules =  ["99:name *= 'Firefox'"];
+  hardware.bluetooth.enable = true;
+
+  # Enable the X11 windowing system.
+  services.xserver.enable = true;
+
+  # Enable the KDE Plasma Desktop Environment.
+  services.xserver.displayManager.sddm.enable = true;
+  services.xserver.desktopManager.plasma5.enable = true;
+
+  # Configure keymap in X11
+  services.xserver = {
+    layout = "us";
+    xkbVariant = "";
   };
-};
 
   # Enable CUPS to print documents.
-  # services.printing.enable = true;
+  services.printing.enable = true;
 
-  # Enable sound.
+  # Enable sound with pipewire.
   sound.enable = true;
-  hardware.pulseaudio.enable = true;
+  hardware.pulseaudio.enable = false;
+  security.rtkit.enable = true;
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+    # If you want to use JACK applications, uncomment this
+    #jack.enable = true;
+
+    # use the example session manager (no others are packaged yet so this is enabled by default,
+    # no need to redefine it in your config for now)
+    #media-session.enable = true;
+  };
+
+  # Enable touchpad support (enabled default in most desktopManager).
+  # services.xserver.libinput.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.melody = {
+  users.users.melodyr = {
     isNormalUser = true;
-    home = "/home/melody";
-    uid = 1000;
-    extraGroups = [ "wheel" "networkmanager"]; # Enable ‘sudo’ for the user.
-    shell = pkgs.zsh;
+    description = "Melody Rodriguez";
+    extraGroups = [ "networkmanager" "wheel" ];
+    packages = with pkgs; [
+      firefox
+      kate
+    #  thunderbird
+    ];
+  };
+
+  # Allow unfree packages
+  nixpkgs.config.allowUnfree = true;
+
+
+
+  # For steam to run
+  programs.steam = {
+    enable = true;
+    remotePlay.openFirewall = true;
+    dedicatedServer.openFirewall = true;
   };
 
   # List packages installed in system profile. To search, run:
-  # $ nix search wget
-    environment.systemPackages = with pkgs; [
-      alacritty
-      syncthing
-      wget 
-      vim
-      firefox
-      emacs
-      python3
-      keepassxc
-      albert
-      ripgrep
-      git
-      aspell
-      aspellDicts.en
-      feh
-      exa
-      ranger
-      google-chrome
-      rustc
-      gcc
-      cargo
-      flameshot
-      discord-canary
-      logisim
-      pavucontrol
-      unzip
-      fd
-    ];
+  environment.systemPackages = with pkgs; [
+   pulseaudio
+   python3
+   rustc
+   rustup
+   cargo
+   vlc
+   obsidian
+   elementary-planner
+   google-chrome
+   vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+   emacs
+   rofi
+   nextcloud24
+   keepassxc
+   git
+   ripgrep
+   betterdiscordctl
+   discord
+   steam
+   ruffle
+   steamPackages.steam
+   steamPackages.steam-runtime
+   ranger
+   ark
+   mono
+   signal-desktop
+  ];
+
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -162,21 +137,11 @@
   #   enable = true;
   #   enableSSHSupport = true;
   # };
-  
-  fonts = {
-     enableFontDir = true;
-     enableGhostscriptFonts = true;
-     fonts = with pkgs; [
-       hack-font
-       source-code-pro
-       powerline-fonts
-       corefonts
-       dejavu_fonts
-       freefont_ttf
-       google-fonts
-       ubuntu_font_family
-   ];
- };
+
+  # List services that you want to enable:
+
+  # Enable the OpenSSH daemon.
+  # services.openssh.enable = true;
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
@@ -190,7 +155,6 @@
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "20.09"; # Did you read the comment?
+  system.stateVersion = "22.05"; # Did you read the comment?
 
 }
-
