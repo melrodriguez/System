@@ -15,9 +15,13 @@
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.efi.efiSysMountPoint = "/boot/efi";
 
+  # boot.loader.grub.efiSupport = true;
+  # boot.loader.grub.enable = true;
+  # boot.loader.grub.device = "nodev";
+  # boot.loader.grub.useOSProber = true;
+
+
   networking.hostName = "nixos"; # Define your hostname.
-  networking.firewall.allowedTCPPorts = [80 443];
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
@@ -26,30 +30,78 @@
   # Enable networking
   networking.networkmanager.enable = true;
 
+  # Enables network manager gui
+  programs.nm-applet.enable = true;
+
   # Set your time zone.
   time.timeZone = "America/Chicago";
 
   # Select internationalisation properties.
-  i18n.defaultLocale = "en_US.utf8";
+  i18n.defaultLocale = "en_US.UTF-8";
 
-  security.acme = {
-    acceptTerms = true;
-    defaults.email = "melody.annette.rodriguez@gmail.com";
+  i18n.extraLocaleSettings = {
+    LC_ADDRESS = "en_US.UTF-8";
+    LC_IDENTIFICATION = "en_US.UTF-8";
+    LC_MEASUREMENT = "en_US.UTF-8";
+    LC_MONETARY = "en_US.UTF-8";
+    LC_NAME = "en_US.UTF-8";
+    LC_NUMERIC = "en_US.UTF-8";
+    LC_PAPER = "en_US.UTF-8";
+    LC_TELEPHONE = "en_US.UTF-8";
+    LC_TIME = "en_US.UTF-8";
   };
 
+
+  # Enable bluetooth
   hardware.bluetooth.enable = true;
+  services.blueman.enable = true;
 
-  # Enable the X11 windowing system.
-  services.xserver.enable = true;
-
-  # Enable the KDE Plasma Desktop Environment.
-  services.xserver.displayManager.sddm.enable = true;
-  services.xserver.desktopManager.plasma5.enable = true;
-
-  # Configure keymap in X11
+  services.picom.enable = true;
   services.xserver = {
-    layout = "us";
-    xkbVariant = "";
+    # Enable the X11 windowing system.
+    enable = true;
+    # Enable touchpad support (enabled default in most desktopManager).
+    libinput.enable = true;
+    xkb.layout = "us";
+    xkb.variant = "";
+    xkb.options = "caps:escape";
+
+    displayManager = {
+      sddm.enable = false;
+      sddm.wayland.enable = true;
+      defaultSession = "hyprland";
+    };
+
+    # windowManager.i3 = {
+    #   enable = true;
+    #   extraPackages = with pkgs; [
+    #     dmenu
+    #     i3status
+    #     i3lock-fancy
+    #     lxappearance
+    #     pkgs.amarena-theme
+    #     gtk3
+    #   ];
+    # };
+  };
+
+  # Enables hyprland
+  programs.hyprland = {
+    enable = true;
+    xwayland.enable = true;
+  };
+
+  environment.sessionVariables = {
+    NIXOS_OZONE_WL = "1";
+  };
+
+  services.dbus.enable = true;
+  xdg.portal = {
+    enable = true;
+    wlr.enable = true;
+    extraPortals = [
+      pkgs.xdg-desktop-portal-gtk
+    ];
   };
 
   # Enable CUPS to print documents.
@@ -72,68 +124,93 @@
     #media-session.enable = true;
   };
 
-  # Enable touchpad support (enabled default in most desktopManager).
-  # services.xserver.libinput.enable = true;
-
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.melodyr = {
+  users.users.melody = {
     isNormalUser = true;
-    description = "Melody Rodriguez";
+    description = "Melody";
     extraGroups = [ "networkmanager" "wheel" ];
     packages = with pkgs; [
       firefox
-      kate
     #  thunderbird
     ];
   };
 
   # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
-
-
-
-  # For steam to run
-  programs.steam = {
-    enable = true;
-    remotePlay.openFirewall = true;
-    dedicatedServer.openFirewall = true;
+  nixpkgs.config = {
+    allowUnfree = true;
+    oraclejdk.accept_license = true;
   };
 
+  # Fix waybar not displaying hyprland
+  nixpkgs.overlays = [
+    (self: super: {
+      waybar = super.waybar.overrideAttrs (oldAttrs: {
+        mesonFlags = oldAttrs.mesonFlags ++ [ "-Dexperimental=true" ];
+      });
+    })
+  ];
+
   # List packages installed in system profile. To search, run:
+  # $ nix search wget
   environment.systemPackages = with pkgs; [
+   brightnessctl
+   imagemagick
+   xfce.thunar
    pulseaudio
-   python3
    rustc
    rustup
    cargo
    vlc
-   obsidian
-   elementary-planner
+   pkgs.oraclejdk
+   # feh
+   alacritty
    google-chrome
    vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-   emacs
+   kitty
    rofi
-   nextcloud24
+   emacs
+   emacsPackages.lsp-java
+   emacsPackages.vterm
+   cmakeMinimal
+   gnumake
+   nixfmt-classic
+   emacsPackages.nerd-icons
    keepassxc
    git
    ripgrep
    betterdiscordctl
    discord
-   steam
-   ruffle
-   steamPackages.steam
-   steamPackages.steam-runtime
    ranger
    ark
    mono
    signal-desktop
+   woeusb
+   util-linux
+   gnome-multi-writer
+   hyprland
+   swww
+   xdg-desktop-portal-gtk
+   xdg-desktop-portal-hyprland
+   xwayland
+   waybar
+   jetbrains.idea-community
+   hexdino
+   unzip
+   wofi
+   texliveFull
+   networkmanagerapplet
   ];
 
+  # Install Fonts
+  fonts.packages = with pkgs; [
+    nerdfonts
+  ];
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;
   # programs.gnupg.agent = {
+
   #   enable = true;
   #   enableSSHSupport = true;
   # };
@@ -155,6 +232,6 @@
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "22.05"; # Did you read the comment?
+  system.stateVersion = "22.11"; # Did you read the comment?
 
 }
