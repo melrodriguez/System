@@ -13,15 +13,12 @@
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  boot.loader.efi.efiSysMountPoint = "/boot/efi";
 
-  # boot.loader.grub.efiSupport = true;
-  # boot.loader.grub.enable = true;
-  # boot.loader.grub.device = "nodev";
-  # boot.loader.grub.useOSProber = true;
-
+  # Use latest kernel.
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 
   networking.hostName = "nixos"; # Define your hostname.
+  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
@@ -29,9 +26,6 @@
 
   # Enable networking
   networking.networkmanager.enable = true;
-
-  # Enables network manager gui
-  programs.nm-applet.enable = true;
 
   # Set your time zone.
   time.timeZone = "America/Chicago";
@@ -51,65 +45,31 @@
     LC_TIME = "en_US.UTF-8";
   };
 
+  # Enable the X11 windowing system.
+  # You can disable this if you're only using the Wayland session.
+  services.xserver.enable = true;
 
-  # Enable bluetooth
-  hardware.bluetooth.enable = true;
-  services.blueman.enable = true;
+  # Enable the KDE Plasma Desktop Environment.
+  services.displayManager.sddm.enable = false;
+  services.desktopManager.plasma6.enable = false;
+  services.displayManager.sddm.wayland.enable = true;
+  services.displayManager.defaultSession = "hyprland";
 
-  services.picom.enable = true;
-  services.xserver = {
-    # Enable the X11 windowing system.
-    enable = true;
-    # Enable touchpad support (enabled default in most desktopManager).
-    libinput.enable = true;
-    xkb.layout = "us";
-    xkb.variant = "";
-    xkb.options = "caps:escape";
-
-    displayManager = {
-      sddm.enable = false;
-      sddm.wayland.enable = true;
-      defaultSession = "hyprland";
-    };
-
-    # windowManager.i3 = {
-    #   enable = true;
-    #   extraPackages = with pkgs; [
-    #     dmenu
-    #     i3status
-    #     i3lock-fancy
-    #     lxappearance
-    #     pkgs.amarena-theme
-    #     gtk3
-    #   ];
-    # };
-  };
-
-  # Enables hyprland
   programs.hyprland = {
     enable = true;
-    xwayland.enable = true;
+    xwayland.enable =true;
   };
-
-  environment.sessionVariables = {
-    NIXOS_OZONE_WL = "1";
-  };
-
-  services.dbus.enable = true;
-  xdg.portal = {
-    enable = true;
-    wlr.enable = true;
-    extraPortals = [
-      pkgs.xdg-desktop-portal-gtk
-    ];
+  # Configure keymap in X11
+  services.xserver.xkb = {
+    layout = "us";
+    variant = "";
   };
 
   # Enable CUPS to print documents.
   services.printing.enable = true;
 
   # Enable sound with pipewire.
-  sound.enable = true;
-  hardware.pulseaudio.enable = false;
+  services.pulseaudio.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
     enable = true;
@@ -124,94 +84,94 @@
     #media-session.enable = true;
   };
 
+  # Enable touchpad support (enabled default in most desktopManager).
+  # services.xserver.libinput.enable = true;
+
+  # Docker
+  virtualisation.docker = {
+    enable = true;
+  };
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.melody = {
+  users.users.melodyr = {
     isNormalUser = true;
-    description = "Melody";
-    extraGroups = [ "networkmanager" "wheel" ];
+    description = "Melody Rodriguez";
+    extraGroups = [ "networkmanager" "wheel" "docker"];
     packages = with pkgs; [
-      firefox
+      kdePackages.kate
     #  thunderbird
     ];
   };
 
-  # Allow unfree packages
-  nixpkgs.config = {
-    allowUnfree = true;
-    oraclejdk.accept_license = true;
+  # Install firefox.
+  programs.firefox.enable = true;
+
+  # Bluetooth
+  hardware.bluetooth.enable = true;
+  services.blueman.enable = true;
+
+  # Garbage Collection
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 1w";
   };
 
-  # Fix waybar not displaying hyprland
-  nixpkgs.overlays = [
-    (self: super: {
-      waybar = super.waybar.overrideAttrs (oldAttrs: {
-        mesonFlags = oldAttrs.mesonFlags ++ [ "-Dexperimental=true" ];
-      });
-    })
-  ];
+  # Allow unfree packages 
+  nixpkgs.config.allowUnfree = true;
+
+  environment.sessionVariables = {
+    # Hint elecron apps to open wayland
+    NIXOS_OZONE_WL = "1";
+  };
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-   brightnessctl
-   imagemagick
-   xfce.thunar
-   pulseaudio
-   rustc
-   rustup
-   cargo
-   vlc
-   pkgs.oraclejdk
-   # feh
-   alacritty
-   google-chrome
-   vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-   kitty
-   rofi
-   emacs
-   emacsPackages.lsp-java
-   emacsPackages.vterm
-   cmakeMinimal
-   gnumake
-   nixfmt-classic
-   emacsPackages.nerd-icons
-   keepassxc
-   git
-   ripgrep
-   betterdiscordctl
-   discord
-   ranger
-   ark
-   mono
-   signal-desktop
-   woeusb
-   util-linux
-   gnome-multi-writer
-   hyprland
-   swww
-   xdg-desktop-portal-gtk
-   xdg-desktop-portal-hyprland
-   xwayland
-   waybar
-   jetbrains.idea-community
-   hexdino
-   unzip
-   wofi
-   texliveFull
-   networkmanagerapplet
+    vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    # HYPRLAND STUFF
+    waybar
+    rofi-wayland
+    kitty
+    hyprshot
+    swaynotificationcenter
+    hyprlock
+    hypridle
+    hyprpaper
+    hyprcursor
+    # NON HYPRLAND STUFF
+    starship
+    stow
+    catppuccin-gtk
+    catppuccin-cursors.mochaMauve
+    xfce.thunar
+    nwg-look
+    vscode
+    brightnessctl
+    python311
+    git
+    neovim
+    chromium
+    unzip
+    minikube
+    kubectl
+    kubernetes
+    kubernetes-helm
+    emacs
+    ripgrep
+    zoom-us
+    google-cloud-sdk
+    wget
   ];
 
-  # Install Fonts
   fonts.packages = with pkgs; [
-    nerdfonts
+    nerd-fonts.caskaydia-cove
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-
-  #   enable = true;
+  # programs.gnupg.agent = { #   enable = true;
   #   enableSSHSupport = true;
   # };
 
@@ -232,6 +192,6 @@
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "22.11"; # Did you read the comment?
+  system.stateVersion = "25.05"; # Did you read the comment?
 
 }
